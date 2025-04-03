@@ -3,7 +3,7 @@ import pytesseract
 from pdf2image import convert_from_bytes
 import re
 import streamlit as st
-# from docx import Document
+from docxtpl import DocxTemplate
 import os
 
 # Chỉ định đường dẫn Tesseract
@@ -55,15 +55,12 @@ def extract_land_info(text):
         "NoiDung": noi_dung.group(1) if noi_dung else "Không tìm thấy"
     }
 
-# Hàm điền thông tin vào template DOCX
+# Hàm điền thông tin vào template DOCX sử dụng docxtpl
 def fill_template_with_data(template_path, land_info):
-    doc = Document(template_path)
+    doc = DocxTemplate(template_path)
     
-    # Thay thế các placeholder trong template bằng dữ liệu
-    for paragraph in doc.paragraphs:
-        for key, value in land_info.items():
-            if f"{{{{{key}}}}}" in paragraph.text:
-                paragraph.text = paragraph.text.replace(f"{{{{{key}}}}}", value)
+    # Điền dữ liệu vào template
+    doc.render(land_info)
     
     # Lưu file DOCX đã điền thông tin
     output_path = "output_land_info.docx"
