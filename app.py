@@ -9,7 +9,6 @@ import time
 from unidecode import unidecode
 from pyvi import ViTokenizer
 from spellchecker import SpellChecker
-import underthesea
 
 # Chỉ định đường dẫn Tesseract
 pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"
@@ -44,9 +43,6 @@ def extract_text_from_scanned_pdf(pdf_bytes):
 
 # Hàm trích xuất thông tin thửa đất và người sử dụng đất
 def extract_land_info(text):
-    # Sử dụng underthesea để cắt từ chính xác hơn
-    text = underthesea.word_tokenize(text)
-    
     thua_so = re.search(r"Thửa đất số:\s*(\d+)", text, re.IGNORECASE)
     to_ban_do_so = re.search(r"tờ bản đồ số:\s*(\d+)", text, re.IGNORECASE)
     dien_tich = re.search(r"Diện tích:\s*([\d.,]+)\s*m²?", text, re.IGNORECASE)
@@ -90,20 +86,6 @@ def extract_land_info(text):
         "NoiDung": noi_dung.group(1).strip() if noi_dung else ""
     }, nguoi_su_dung
 
-# Hàm điền thông tin vào template DOCX
-def fill_template_with_data(template_path, land_info, nguoi_su_dung):
-    doc = DocxTemplate(template_path)
-
-    # Hợp nhất hai dictionary để truyền vào template
-    context = {**land_info, **nguoi_su_dung}
-    
-    doc.render(context)
-
-    # Lưu file DOCX đã điền thông tin
-    output_path = "output_land_info.docx"
-    doc.save(output_path)
-    return output_path
-
 # Upload file PDF
 uploaded_file = st.file_uploader("📂 Chọn file PDF", type=["pdf"])
 
@@ -129,12 +111,12 @@ if uploaded_file:
             )
 
     # Hiển thị kết quả trích xuất
-    st.subheader("🏠 Thông tin thửa đất:")  # Hiển thị thông tin thửa đất
+    st.subheader("🏠 Thông tin thửa đất:")
     for key, value in land_info.items():
         st.write(f"**{key}:** {value}")
 
     # Hiển thị thông tin từng người sử dụng đất
-    st.subheader("👤 Người sử dụng đất:")  # Hiển thị thông tin người sử dụng đất
+    st.subheader("👤 Người sử dụng đất:")
     for i in range(1, len(nguoi_su_dung) // 3 + 1):
         st.write(f"**Người {i}:** {nguoi_su_dung.get(f'TenNguoi_{i}', '')}")
         st.write(f"**CCCD:** {nguoi_su_dung.get(f'SoCCCD_{i}', '')}")

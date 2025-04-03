@@ -4,7 +4,6 @@ pdf2image
 unidecode
 pyvi
 pyspellchecker
-underthesea
 pyspellchecker
 streamlit
 docxtpl
