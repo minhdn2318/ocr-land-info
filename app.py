@@ -22,24 +22,24 @@ def extract_text_from_scanned_pdf(pdf_bytes):
         extracted_text += text + "\n"
     return extracted_text
 
-# Hàm trích xuất thông tin thửa đất, hỗ trợ các trường xuống dòng
+# Hàm trích xuất thông tin thửa đất, hỗ trợ xuống dòng và dấu chấm kết thúc
 def extract_land_info(text):
     thua_so = re.search(r"Thửa đất số:\s*(\d+)", text, re.IGNORECASE)
     to_ban_do_so = re.search(r"tờ bản đồ số:\s*(\d+)", text, re.IGNORECASE)
     dien_tich = re.search(r"Diện tích:\s*([\d.,]+)\s*m²?", text, re.IGNORECASE)
 
-    # Sửa các regex để lấy nội dung xuống dòng
-    loai_dat = re.search(r"Loại đất:\s*([\s\S]*?)(?:\n\s*\w+:|\Z)", text, re.IGNORECASE)
-    hinh_thuc_su_dung = re.search(r"Hình thức sử dụng đất:\s*([\s\S]*?)(?:\n\s*\w+:|\Z)", text, re.IGNORECASE)
-    dia_chi = re.search(r"Địa chỉ:\s*([\s\S]*?)(?:\n\s*\w+:|\Z)", text, re.IGNORECASE)
-    thoi_han_su_dung = re.search(r"Thời hạn:\s*([\s\S]*?)(?:\n\s*\w+:|\Z)", text, re.IGNORECASE)
-    nguon_goc_su_dung = re.search(r"Nguồn gốc sử dụng:\s*([\s\S]*?)(?:\n\s*\w+:|\Z)", text, re.IGNORECASE)
-    nguoi_su_dung = re.search(r"Người sử dụng đất, chủ sở hữu tài sản gắn liền với đất:\s*([\s\S]*?)(?:\n\s*\w+:|\Z)", text, re.IGNORECASE)
-    thoi_diem_dang_ky = re.search(r"Thời điểm đăng ký vào sổ địa chính:\s*([\s\S]*?)(?:\n\s*\w+:|\Z)", text, re.IGNORECASE)
-    so_phat_hanh_GCN = re.search(r"Số phát hành Giấy chứng nhận:\s*([\s\S]*?)(?:\n\s*\w+:|\Z)", text, re.IGNORECASE)
-    so_vao_so_cap_GCN = re.search(r"Số vào sổ cấp Giấy chứng nhận:\s*([\s\S]*?)(?:\n\s*\w+:|\Z)", text, re.IGNORECASE)
-    thoi_diem_dang_ky_GCN = re.search(r"Thời điểm đăng ký:\s*([\s\S]*?)(?:\n\s*\w+:|\Z)", text, re.IGNORECASE)
-    noi_dung = re.search(r"Ghi chú:\s*([\s\S]*?)(?:\n\s*\w+:|\Z)", text, re.IGNORECASE)
+    # Sử dụng dấu chấm (.) làm điểm kết thúc cho các trường nhiều dòng
+    loai_dat = re.search(r"Loại đất:\s*([\s\S]*?)\.", text, re.IGNORECASE)
+    hinh_thuc_su_dung = re.search(r"Hình thức sử dụng đất:\s*([\s\S]*?)\.", text, re.IGNORECASE)
+    dia_chi = re.search(r"Địa chỉ:\s*([\s\S]*?)\.", text, re.IGNORECASE)
+    thoi_han_su_dung = re.search(r"Thời hạn:\s*([\s\S]*?)\.", text, re.IGNORECASE)
+    nguon_goc_su_dung = re.search(r"Nguồn gốc sử dụng:\s*([\s\S]*?)\.", text, re.IGNORECASE)
+    nguoi_su_dung = re.search(r"Người sử dụng đất, chủ sở hữu tài sản gắn liền với đất:\s*([\s\S]*?)\.", text, re.IGNORECASE)
+    thoi_diem_dang_ky = re.search(r"Thời điểm đăng ký vào sổ địa chính:\s*([\s\S]*?)\.", text, re.IGNORECASE)
+    so_phat_hanh_GCN = re.search(r"Số phát hành Giấy chứng nhận:\s*([\s\S]*?)\.", text, re.IGNORECASE)
+    so_vao_so_cap_GCN = re.search(r"Số vào sổ cấp Giấy chứng nhận:\s*([\s\S]*?)\.", text, re.IGNORECASE)
+    thoi_diem_dang_ky_GCN = re.search(r"Thời điểm đăng ký:\s*([\s\S]*?)\.", text, re.IGNORECASE)
+    noi_dung = re.search(r"Ghi chú:\s*([\s\S]*?)\.", text, re.IGNORECASE)
 
     # Trả về dữ liệu, loại bỏ khoảng trắng thừa
     return {
