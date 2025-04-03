@@ -5,6 +5,7 @@ import re
 import streamlit as st
 from docxtpl import DocxTemplate
 import os
+import time
 
 # Chỉ định đường dẫn Tesseract
 pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"
@@ -79,10 +80,8 @@ if uploaded_file:
     # Hiển thị kết quả
     st.subheader("🏠 Thông tin thửa đất:")
     for key, value in land_info.items():
-        # Nếu không tìm thấy, tạo ô nhập liệu cho người dùng
-        if value == "Không tìm thấy":
-            land_info[key] = st.text_input(f"Nhập {key}:", "")
-        st.write(f"**{key}:** {land_info[key]}")
+        # Nếu không tìm thấy, không yêu cầu nhập lại thông tin
+        st.write(f"**{key}:** {value}")
 
     # Hiển thị toàn bộ văn bản OCR
     st.subheader("📄 Nội dung OCR:")
@@ -90,8 +89,13 @@ if uploaded_file:
 
     # Thêm nút xuất file DOCX
     if st.button("📥 Xuất file DOCX"):
-        template_path = "template.docx"  # Đảm bảo rằng template.docx có trong thư mục hiện tại
-        docx_file = fill_template_with_data(template_path, land_info)
+        # Hiển thị progress bar
+        with st.spinner("Đang xuất file DOCX..."):
+            time.sleep(2)  # Giả lập thời gian xuất file
+            template_path = "template.docx"  # Đảm bảo rằng template.docx có trong thư mục hiện tại
+            docx_file = fill_template_with_data(template_path, land_info)
+        
+        st.success("Xuất file thành công!")
         st.download_button(
             label="Tải file DOCX",
             data=open(docx_file, "rb").read(),
