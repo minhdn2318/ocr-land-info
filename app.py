@@ -4,13 +4,16 @@ from pdf2image import convert_from_bytes
 from PIL import Image
 import re
 import streamlit as st
+import os
 
-# Cấu hình Streamlit App
+# Poppler đã được cài đặt bởi `poppler-utils` từ `packages.txt`
+POPPLER_PATH = "/usr/bin"  # Đường dẫn mặc định trên Linux
+
 st.title("📜 Trích xuất thông tin thửa đất từ PDF scanner")
 
 # Hàm trích xuất văn bản từ PDF scan
 def extract_text_from_scanned_pdf(pdf_bytes):
-    images = convert_from_bytes(pdf_bytes.read())  # Chuyển PDF thành ảnh
+    images = convert_from_bytes(pdf_bytes.read(), poppler_path=POPPLER_PATH)
     extracted_text = ""
 
     for img in images:
