@@ -2,8 +2,7 @@ fitz
 pytesseract
 pdf2image
 unidecode
-pyvi
-pyspellchecker
+symspellpy
 pymupdf==1.23.7
 streamlit
 docxtpl
