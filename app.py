@@ -77,7 +77,26 @@ if uploaded_file:
     text = extract_text_from_scanned_pdf(uploaded_file)
     land_info = extract_land_info(text)
 
-    # Hiển thị kết quả
+    # Thêm nút xuất file DOCX lên đầu
+    if st.button("📥 Xuất file DOCX và Tải về"):
+        # Hiển thị progress bar
+        with st.spinner("Đang xuất file DOCX..."):
+            time.sleep(2)  # Giả lập thời gian xuất file
+            template_path = "template.docx"  # Đảm bảo rằng template.docx có trong thư mục hiện tại
+            docx_file = fill_template_with_data(template_path, land_info)
+
+        st.success("Xuất file thành công!")
+        
+        # Tải file DOCX ngay lập tức
+        with open(docx_file, "rb") as file:
+            st.download_button(
+                label="Tải file DOCX",
+                data=file.read(),
+                file_name=docx_file,
+                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            )
+
+    # Hiển thị kết quả thông tin thửa đất
     st.subheader("🏠 Thông tin thửa đất:")
     for key, value in land_info.items():
         # Nếu không tìm thấy, không yêu cầu nhập lại thông tin
@@ -86,19 +105,3 @@ if uploaded_file:
     # Hiển thị toàn bộ văn bản OCR
     st.subheader("📄 Nội dung OCR:")
     st.text_area("Nội dung nhận diện:", text, height=300)
-
-    # Thêm nút xuất file DOCX
-    if st.button("📥 Xuất file DOCX"):
-        # Hiển thị progress bar
-        with st.spinner("Đang xuất file DOCX..."):
-            time.sleep(2)  # Giả lập thời gian xuất file
-            template_path = "template.docx"  # Đảm bảo rằng template.docx có trong thư mục hiện tại
-            docx_file = fill_template_with_data(template_path, land_info)
-        
-        st.success("Xuất file thành công!")
-        st.download_button(
-            label="Tải file DOCX",
-            data=open(docx_file, "rb").read(),
-            file_name=docx_file,
-            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-        )
