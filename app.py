@@ -13,6 +13,12 @@ POPPLER_PATH = "/usr/bin"  # Đường dẫn mặc định trên Linux
 
 st.title("📜 Trích xuất thông tin thửa đất từ PDF scanner")
 
+# Hàm chuẩn hóa văn bản, sửa lỗi OCR
+def clean_text(text):
+    text = text.replace("m°", "m²")  # Sửa lỗi nhận diện sai đơn vị diện tích
+    text = text.replace("m 2", "m²")  # Một số OCR có thể tách khoảng trắng
+    return text.strip()
+
 # Hàm trích xuất văn bản từ PDF scan
 def extract_text_from_scanned_pdf(pdf_bytes):
     images = convert_from_bytes(pdf_bytes.read(), poppler_path=POPPLER_PATH)
@@ -20,7 +26,7 @@ def extract_text_from_scanned_pdf(pdf_bytes):
     for img in images:
         text = pytesseract.image_to_string(img, lang="vie")  # OCR tiếng Việt
         extracted_text += text + "\n"
-    return extracted_text
+    return clean_text(extracted_text)  # Áp dụng sửa lỗi OCR
 
 # Hàm trích xuất thông tin thửa đất và người sử dụng đất
 def extract_land_info(text):
@@ -116,7 +122,3 @@ if uploaded_file:
         st.write(f"**Người {i}:** {nguoi_su_dung.get(f'TenNguoi_{i}', '')}")
         st.write(f"**CCCD:** {nguoi_su_dung.get(f'SoCCCD_{i}', '')}")
         st.write(f"**Địa chỉ:** {nguoi_su_dung.get(f'DiaChiNguoi_{i}', '')}")
-
-    # Hiển thị nội dung OCR
-    st.subheader("📄 Nội dung OCR:")
-    st.text_area("Nội dung nhận diện:", text, height=300)
