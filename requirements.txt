@@ -3,3 +3,4 @@ pytesseract
 pdf2image
 pillow
 streamlit
+python-docx
