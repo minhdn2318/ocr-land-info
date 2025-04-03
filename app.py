@@ -22,40 +22,43 @@ def extract_text_from_scanned_pdf(pdf_bytes):
         extracted_text += text + "\n"
     return extracted_text
 
-# Hàm trích xuất thông tin thửa đất
+# Hàm trích xuất thông tin thửa đất, hỗ trợ các trường xuống dòng
 def extract_land_info(text):
     thua_so = re.search(r"Thửa đất số:\s*(\d+)", text, re.IGNORECASE)
     to_ban_do_so = re.search(r"tờ bản đồ số:\s*(\d+)", text, re.IGNORECASE)
     dien_tich = re.search(r"Diện tích:\s*([\d.,]+)\s*m²?", text, re.IGNORECASE)
-    loai_dat = re.search(r"Loại đất:\s*(.*)", text, re.IGNORECASE)
-    hinh_thuc_su_dung = re.search(r"Hình thức sử dụng đất:\s*(.*)", text, re.IGNORECASE)
-    dia_chi = re.search(r"Địa chỉ:\s*(.*)", text, re.IGNORECASE)
-    thoi_han_su_dung = re.search(r"Thời hạn:\s*(.*)", text, re.IGNORECASE)
-    nguon_goc_su_dung = re.search(r"Nguồn gốc sử dụng:\s*(.*)", text, re.IGNORECASE)
-    nguoi_su_dung = re.search(r"Người sử dụng đất, chủ sở hữu tài sản gắn liền với đất:\s*(.*)", text, re.IGNORECASE)
-    thoi_diem_dang_ky = re.search(r"Thời điểm đăng ký vào sổ địa chính:\s*(.*)", text, re.IGNORECASE)
-    so_phat_hanh_GCN = re.search(r"Số phát hành Giấy chứng nhận:\s*(.*)", text, re.IGNORECASE)
-    so_vao_so_cap_GCN = re.search(r"Số vào sổ cấp Giấy chứng nhận:\s*(.*)", text, re.IGNORECASE)
-    thoi_diem_dang_ky_GCN = re.search(r"Thời điểm đăng ký:\s*(.*)", text, re.IGNORECASE)
-    noi_dung = re.search(r"Ghi chú:\s*(.*)", text, re.IGNORECASE)
 
-    # Trả về dữ liệu hoặc "Không tìm thấy" nếu không có giá trị
+    # Sửa các regex để lấy nội dung xuống dòng
+    loai_dat = re.search(r"Loại đất:\s*([\s\S]*?)(?:\n\s*\w+:|\Z)", text, re.IGNORECASE)
+    hinh_thuc_su_dung = re.search(r"Hình thức sử dụng đất:\s*([\s\S]*?)(?:\n\s*\w+:|\Z)", text, re.IGNORECASE)
+    dia_chi = re.search(r"Địa chỉ:\s*([\s\S]*?)(?:\n\s*\w+:|\Z)", text, re.IGNORECASE)
+    thoi_han_su_dung = re.search(r"Thời hạn:\s*([\s\S]*?)(?:\n\s*\w+:|\Z)", text, re.IGNORECASE)
+    nguon_goc_su_dung = re.search(r"Nguồn gốc sử dụng:\s*([\s\S]*?)(?:\n\s*\w+:|\Z)", text, re.IGNORECASE)
+    nguoi_su_dung = re.search(r"Người sử dụng đất, chủ sở hữu tài sản gắn liền với đất:\s*([\s\S]*?)(?:\n\s*\w+:|\Z)", text, re.IGNORECASE)
+    thoi_diem_dang_ky = re.search(r"Thời điểm đăng ký vào sổ địa chính:\s*([\s\S]*?)(?:\n\s*\w+:|\Z)", text, re.IGNORECASE)
+    so_phat_hanh_GCN = re.search(r"Số phát hành Giấy chứng nhận:\s*([\s\S]*?)(?:\n\s*\w+:|\Z)", text, re.IGNORECASE)
+    so_vao_so_cap_GCN = re.search(r"Số vào sổ cấp Giấy chứng nhận:\s*([\s\S]*?)(?:\n\s*\w+:|\Z)", text, re.IGNORECASE)
+    thoi_diem_dang_ky_GCN = re.search(r"Thời điểm đăng ký:\s*([\s\S]*?)(?:\n\s*\w+:|\Z)", text, re.IGNORECASE)
+    noi_dung = re.search(r"Ghi chú:\s*([\s\S]*?)(?:\n\s*\w+:|\Z)", text, re.IGNORECASE)
+
+    # Trả về dữ liệu, loại bỏ khoảng trắng thừa
     return {
-        "SoThua": thua_so.group(1) if thua_so else "Không tìm thấy",
-        "SoToBanDo": to_ban_do_so.group(1) if to_ban_do_so else "Không tìm thấy",
-        "DienTich": dien_tich.group(1) if dien_tich else "Không tìm thấy",
-        "LoaiDat": loai_dat.group(1) if loai_dat else "Không tìm thấy",
-        "HinhThucSuDung": hinh_thuc_su_dung.group(1) if hinh_thuc_su_dung else "Không tìm thấy",
-        "DiaChi": dia_chi.group(1) if dia_chi else "Không tìm thấy",
-        "ThoiHanSuDung": thoi_han_su_dung.group(1) if thoi_han_su_dung else "Không tìm thấy",
-        "NguonGocSuDung": nguon_goc_su_dung.group(1) if nguon_goc_su_dung else "Không tìm thấy",
-        "NguoiSuDung": nguoi_su_dung.group(1) if nguoi_su_dung else "Không tìm thấy",
-        "ThoiDiemDangKy": thoi_diem_dang_ky.group(1) if thoi_diem_dang_ky else "Không tìm thấy",
-        "SoPhatHanhGCN": so_phat_hanh_GCN.group(1) if so_phat_hanh_GCN else "Không tìm thấy",
-        "SoVaoSoCapGCN": so_vao_so_cap_GCN.group(1) if so_vao_so_cap_GCN else "Không tìm thấy",
-        "ThoiDiemDangKyGCN": thoi_diem_dang_ky_GCN.group(1) if thoi_diem_dang_ky_GCN else "Không tìm thấy",
-        "NoiDung": noi_dung.group(1) if noi_dung else "Không tìm thấy"
+        "SoThua": thua_so.group(1).strip() if thua_so else "Không tìm thấy",
+        "SoToBanDo": to_ban_do_so.group(1).strip() if to_ban_do_so else "Không tìm thấy",
+        "DienTich": dien_tich.group(1).strip() if dien_tich else "Không tìm thấy",
+        "LoaiDat": loai_dat.group(1).strip() if loai_dat else "Không tìm thấy",
+        "HinhThucSuDung": hinh_thuc_su_dung.group(1).strip() if hinh_thuc_su_dung else "Không tìm thấy",
+        "DiaChi": dia_chi.group(1).strip() if dia_chi else "Không tìm thấy",
+        "ThoiHanSuDung": thoi_han_su_dung.group(1).strip() if thoi_han_su_dung else "Không tìm thấy",
+        "NguonGocSuDung": nguon_goc_su_dung.group(1).strip() if nguon_goc_su_dung else "Không tìm thấy",
+        "NguoiSuDung": nguoi_su_dung.group(1).strip() if nguoi_su_dung else "Không tìm thấy",
+        "ThoiDiemDangKy": thoi_diem_dang_ky.group(1).strip() if thoi_diem_dang_ky else "Không tìm thấy",
+        "SoPhatHanhGCN": so_phat_hanh_GCN.group(1).strip() if so_phat_hanh_GCN else "Không tìm thấy",
+        "SoVaoSoCapGCN": so_vao_so_cap_GCN.group(1).strip() if so_vao_so_cap_GCN else "Không tìm thấy",
+        "ThoiDiemDangKyGCN": thoi_diem_dang_ky_GCN.group(1).strip() if thoi_diem_dang_ky_GCN else "Không tìm thấy",
+        "NoiDung": noi_dung.group(1).strip() if noi_dung else "Không tìm thấy"
     }
+
 
 # Hàm điền thông tin vào template DOCX
 def fill_template_with_data(template_path, land_info):
