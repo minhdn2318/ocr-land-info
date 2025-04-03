@@ -3,7 +3,7 @@ import pytesseract
 from pdf2image import convert_from_bytes
 import re
 import streamlit as st
-from docx import Document
+# from docx import Document
 import os
 
 # Chỉ định đường dẫn Tesseract
