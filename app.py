@@ -28,7 +28,7 @@ def extract_land_info(text):
     dien_tich = re.search(r"Diện tích:\s*([\d.,]+)\s*m²?", text, re.IGNORECASE)
     loai_dat = re.search(r"Loại đất:\s*(.*)", text, re.IGNORECASE)
     hinh_thuc_su_dung = re.search(r"Hình thức sử dụng đất:\s*(.*)", text, re.IGNORECASE)
-    dia_chi = re.search(r"Địa chỉ   :\s*(.*)", text, re.IGNORECASE)
+    dia_chi = re.search(r"Địa chỉ:\s*(.*)", text, re.IGNORECASE)
     thoi_han_su_dung = re.search(r"Thời hạn:\s*(.*)", text, re.IGNORECASE)
     nguon_goc_su_dung = re.search(r"Nguồn gốc sử dụng:\s*(.*)", text, re.IGNORECASE)
     nguoi_su_dung = re.search(r"Người sử dụng đất, chủ sở hữu tài sản gắn liền với đất:\s*(.*)", text, re.IGNORECASE)
