@@ -5,7 +5,8 @@ from PIL import Image
 import re
 import streamlit as st
 import os
-
+# Chỉ định đường dẫn Tesseract
+pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"
 # Poppler đã được cài đặt bởi `poppler-utils` từ `packages.txt`
 POPPLER_PATH = "/usr/bin"  # Đường dẫn mặc định trên Linux
 
