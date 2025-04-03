@@ -23,23 +23,24 @@ def extract_text_from_scanned_pdf(pdf_bytes):
 
 # Hàm trích xuất thông tin thửa đất
 def extract_land_info(text):
-    thuad_so = re.search(r"Thửa đất số:\s*(\d+)", text, re.IGNORECASE)
+    thua_so = re.search(r"Thửa đất số:\s*(\d+)", text, re.IGNORECASE)
     to_ban_do_so = re.search(r"tờ bản đồ số:\s*(\d+)", text, re.IGNORECASE)
     dien_tich = re.search(r"Diện tích:\s*([\d.,]+)\s*m²?", text, re.IGNORECASE)
     loai_dat = re.search(r"Loại đất:\s*(.*)", text, re.IGNORECASE)
-    hinh_thuc_su_dung = re.search(r"Hình thức sử dụng:\s*(.*)", text, re.IGNORECASE)
-    dia_chi = re.search(r"Địa chỉ thửa đất:\s*(.*)", text, re.IGNORECASE)
-    thoi_han_su_dung = re.search(r"Thời hạn sử dụng:\s*(.*)", text, re.IGNORECASE)
+    hinh_thuc_su_dung = re.search(r"Hình thức sử dụng đất:\s*(.*)", text, re.IGNORECASE)
+    dia_chi = re.search(r"Địa chỉ   :\s*(.*)", text, re.IGNORECASE)
+    thoi_han_su_dung = re.search(r"Thời hạn:\s*(.*)", text, re.IGNORECASE)
     nguon_goc_su_dung = re.search(r"Nguồn gốc sử dụng:\s*(.*)", text, re.IGNORECASE)
-    nguoi_su_dung = re.search(r"Người sử dụng đất:\s*(.*)", text, re.IGNORECASE)
+    nguoi_su_dung = re.search(r"Người sử dụng đất, chủ sở hữu tài sản gắn liền với đất:\s*(.*)", text, re.IGNORECASE)
     thoi_diem_dang_ky = re.search(r"Thời điểm đăng ký vào sổ địa chính:\s*(.*)", text, re.IGNORECASE)
-    so_phat_hanh_GCN = re.search(r"Số phát hành GCN:\s*(.*)", text, re.IGNORECASE)
-    so_vao_so_cap_GCN = re.search(r"Số vào sổ cấp GCN:\s*(.*)", text, re.IGNORECASE)
+    so_phat_hanh_GCN = re.search(r"Số phát hành Giấy chứng nhận:\s*(.*)", text, re.IGNORECASE)
+    so_vao_so_cap_GCN = re.search(r"Số vào sổ cấp Giấy chứng nhận:\s*(.*)", text, re.IGNORECASE)
     thoi_diem_dang_ky_GCN = re.search(r"Thời điểm đăng ký:\s*(.*)", text, re.IGNORECASE)
-    noi_dung = re.search(r"Nội dung:\s*(.*)", text, re.IGNORECASE)
+    noi_dung = re.search(r"Ghi chú:\s*(.*)", text, re.IGNORECASE)
 
+    # Trả về dữ liệu hoặc "Không tìm thấy" nếu không có giá trị
     return {
-        "SoThua": thuad_so.group(1) if thuad_so else "Không tìm thấy",
+        "SoThua": thua_so.group(1) if thua_so else "Không tìm thấy",
         "SoToBanDo": to_ban_do_so.group(1) if to_ban_do_so else "Không tìm thấy",
         "DienTich": dien_tich.group(1) if dien_tich else "Không tìm thấy",
         "LoaiDat": loai_dat.group(1) if loai_dat else "Không tìm thấy",
@@ -55,13 +56,14 @@ def extract_land_info(text):
         "NoiDung": noi_dung.group(1) if noi_dung else "Không tìm thấy"
     }
 
-# Hàm điền thông tin vào template DOCX sử dụng docxtpl
+# Hàm điền thông tin vào template DOCX
 def fill_template_with_data(template_path, land_info):
     doc = DocxTemplate(template_path)
     
-    # Điền dữ liệu vào template
-    doc.render(land_info)
-    
+    # Thay thế các placeholder trong template bằng dữ liệu
+    context = {key: value for key, value in land_info.items()}
+    doc.render(context)
+
     # Lưu file DOCX đã điền thông tin
     output_path = "output_land_info.docx"
     doc.save(output_path)
@@ -77,7 +79,10 @@ if uploaded_file:
     # Hiển thị kết quả
     st.subheader("🏠 Thông tin thửa đất:")
     for key, value in land_info.items():
-        st.write(f"**{key}:** {value}")
+        # Nếu không tìm thấy, tạo ô nhập liệu cho người dùng
+        if value == "Không tìm thấy":
+            land_info[key] = st.text_input(f"Nhập {key}:", "")
+        st.write(f"**{key}:** {land_info[key]}")
 
     # Hiển thị toàn bộ văn bản OCR
     st.subheader("📄 Nội dung OCR:")
