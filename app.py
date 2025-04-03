@@ -35,7 +35,7 @@ def extract_text_from_scanned_pdf(pdf_bytes):
 # Hàm trích xuất thông tin thửa đất
 def extract_land_info(text):
     patterns = {
-        "SoThua": r"Thửa đất số:\s*(\d+)",
+        "SoThua": r"thửa đất số:\s*(\d+)",
         "SoToBanDo": r"tờ bản đồ số:\s*(\d+)",
         "DienTich": r"Diện tích:\s*([\d.,]+)\s*m²?",
         "LoaiDat": r"Loại đất:\s*([\s\S]*?)\.",
