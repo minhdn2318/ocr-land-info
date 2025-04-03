@@ -6,10 +6,6 @@ import streamlit as st
 from docxtpl import DocxTemplate
 import os
 import time
-from unidecode import unidecode
-from pyvi import ViTokenizer
-from spellchecker import SpellChecker
-import underthesea
 
 # Chỉ định đường dẫn Tesseract
 pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"
@@ -21,15 +17,7 @@ st.title("📜 Trích xuất thông tin thửa đất từ PDF scanner")
 def clean_text(text):
     text = text.replace("m°", "m²")  # Sửa lỗi nhận diện sai đơn vị diện tích
     text = text.replace("m 2", "m²")  # Một số OCR có thể tách khoảng trắng
-    text = unidecode(text)  # Chuẩn hóa dấu tiếng Việt
     return text.strip()
-
-# Hàm sửa lỗi chính tả sử dụng pyspellchecker
-def correct_spelling(text):
-    spell = SpellChecker(language='vi')  # Tạo đối tượng spellchecker cho tiếng Việt
-    words = text.split()
-    corrected_words = [spell.correction(word) for word in words]
-    return ' '.join(corrected_words)
 
 # Hàm trích xuất văn bản từ PDF scan
 def extract_text_from_scanned_pdf(pdf_bytes):
@@ -38,15 +26,10 @@ def extract_text_from_scanned_pdf(pdf_bytes):
     for img in images:
         text = pytesseract.image_to_string(img, lang="vie")  # OCR tiếng Việt
         extracted_text += text + "\n"
-    extracted_text = clean_text(extracted_text)  # Chuẩn hóa văn bản
-    extracted_text = correct_spelling(extracted_text)  # Sửa lỗi chính tả
-    return extracted_text
+    return clean_text(extracted_text)  # Áp dụng sửa lỗi OCR
 
 # Hàm trích xuất thông tin thửa đất và người sử dụng đất
 def extract_land_info(text):
-    # Sử dụng underthesea để cắt từ chính xác hơn
-    text = underthesea.word_tokenize(text)
-    
     thua_so = re.search(r"Thửa đất số:\s*(\d+)", text, re.IGNORECASE)
     to_ban_do_so = re.search(r"tờ bản đồ số:\s*(\d+)", text, re.IGNORECASE)
     dien_tich = re.search(r"Diện tích:\s*([\d.,]+)\s*m²?", text, re.IGNORECASE)
@@ -129,12 +112,12 @@ if uploaded_file:
             )
 
     # Hiển thị kết quả trích xuất
-    st.subheader("🏠 Thông tin thửa đất:")  # Hiển thị thông tin thửa đất
+    st.subheader("🏠 Thông tin thửa đất:")
     for key, value in land_info.items():
         st.write(f"**{key}:** {value}")
 
     # Hiển thị thông tin từng người sử dụng đất
-    st.subheader("👤 Người sử dụng đất:")  # Hiển thị thông tin người sử dụng đất
+    st.subheader("👤 Người sử dụng đất:")
     for i in range(1, len(nguoi_su_dung) // 3 + 1):
         st.write(f"**Người {i}:** {nguoi_su_dung.get(f'TenNguoi_{i}', '')}")
         st.write(f"**CCCD:** {nguoi_su_dung.get(f'SoCCCD_{i}', '')}")

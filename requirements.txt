@@ -1,6 +1,10 @@
-pymupdf
+fitz
 pytesseract
 pdf2image
-pillow
+unidecode
+pyvi
+pyspellchecker
+underthesea
+pyspellchecker
 streamlit
 docxtpl
