@@ -1,14 +1,11 @@
+import fitz  # PyMuPDF
 import pytesseract
 from pdf2image import convert_from_bytes
-import cv2
-import numpy as np
 import re
 import streamlit as st
 from docxtpl import DocxTemplate
 import os
 import time
-import unicodedata
-import unidecode
 
 # Chỉ định đường dẫn Tesseract
 pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"
@@ -16,96 +13,127 @@ POPPLER_PATH = "/usr/bin"  # Đường dẫn mặc định trên Linux
 
 st.title("📜 Trích xuất thông tin thửa đất từ PDF scanner")
 
-# Hàm tiền xử lý ảnh để tăng chất lượng OCR
-def preprocess_image(img):
-    img = np.array(img)
-    gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-    _, thresh = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-    return thresh
+# Hàm chuẩn hóa văn bản, sửa lỗi OCR
+def clean_text(text):
+    replacements = {
+        "m°": "m²",
+        "m 2": "m²",
+        "lôai": "loại",
+        "địạ": "địa",
+        "CCCD sô": "CCCD số",
+        "GCN:": "Giấy chứng nhận:",
+        # Thêm các lỗi OCR phổ biến khác
+    }
+    for wrong, right in replacements.items():
+        text = text.replace(wrong, right)
+    return text.strip()
 
-# Chuẩn hóa văn bản đầu ra từ OCR (bỏ dấu, lowercase, xóa ký tự thừa)
-def normalize_text(text):
-    text = unidecode.unidecode(text)
-    text = unicodedata.normalize('NFKC', text)
-    text = re.sub(r"\s+", " ", text)  # Gộp nhiều khoảng trắng
-    return text.lower().strip()
-
-# Trích xuất văn bản từ PDF scan
+# Hàm trích xuất văn bản từ PDF scan
 def extract_text_from_scanned_pdf(pdf_bytes):
-    images = convert_from_bytes(pdf_bytes.read(), dpi=300, poppler_path=POPPLER_PATH)
+    images = convert_from_bytes(pdf_bytes.read(), poppler_path=POPPLER_PATH)
     extracted_text = ""
     for img in images:
-        processed_img = preprocess_image(img)
-        text = pytesseract.image_to_string(processed_img, lang="vie+eng", config="--oem 3 --psm 6")
+        text = pytesseract.image_to_string(img, lang="vie")  # OCR tiếng Việt
         extracted_text += text + "\n"
-    return extracted_text.strip()
+    return clean_text(extracted_text)  # Áp dụng sửa lỗi OCR
 
-# Hàm trích xuất thông tin từ text đã normalize
+# Hàm trích xuất thông tin thửa đất và người sử dụng đất
 def extract_land_info(text):
-    patterns = {
-        "SoThua": r"thua dat so\s*(\d+)",
-        "SoToBanDo": r"to ban do so\s*(\d+)",
-        "DienTich": r"dien tich\s*([\d.,]+)\s*m2?",
-        "LoaiDat": r"loai dat\s*([\w\s\-]+)",
-        "HinhThucSuDung": r"hinh thuc su dung\s*([\w\s\-]+)",
-        "DiaChi": r"dia chi\s*([\w\s\d\-,/.]+)",
-        "ThoiHanSuDung": r"thoi han\s*([\w\s\-]+)",
-        "NguonGocSuDung": r"nguon goc su dung\s*([\w\s\-]+)",
-        "ThoiDiemDangKy": r"thoi diem dang ky vao so dia chinh\s*([\w\s\d\-/.]+)",
-        "SoPhatHanhGCN": r"so phat hanh giay chung nhan\s*([\w\d\-/.]+)",
-        "SoVaoSoCapGCN": r"so vao so cap giay chung nhan\s*([\w\d\-/.]+)",
-        "ThoiDiemDangKyGCN": r"thoi diem dang ky\s*([\w\s\d\-/.]+)",
-        "NoiDung": r"ghi chu\s*([\w\s\d\-/.]+)"
-    }
+    thua_so = re.search(r"Thửa đất số:\s*(\d+)", text, re.IGNORECASE)
+    to_ban_do_so = re.search(r"tờ bản đồ số:\s*(\d+)", text, re.IGNORECASE)
+    dien_tich = re.search(r"Diện tích:\s*([\d.,]+)\s*m²?", text, re.IGNORECASE)
 
-    extracted_info = {key: (re.search(pattern, text).group(1).strip() if re.search(pattern, text) else "") for key, pattern in patterns.items()}
+    # Dùng dấu chấm (.) để kết thúc các trường nhiều dòng
+    loai_dat = re.search(r"Loại đất:\s*([\s\S]*?)\.", text, re.IGNORECASE)
+    hinh_thuc_su_dung = re.search(r"Hình thức sử dụng đất:\s*([\s\S]*?)\.", text, re.IGNORECASE)
+    dia_chi = re.search(r"Địa chỉ:\s*([\s\S]*?)\.", text, re.IGNORECASE)
+    thoi_han_su_dung = re.search(r"Thời hạn:\s*([\s\S]*?)\.", text, re.IGNORECASE)
+    nguon_goc_su_dung = re.search(r"Nguồn gốc sử dụng:\s*([\s\S]*?)\.", text, re.IGNORECASE)
+    thoi_diem_dang_ky = re.search(r"Thời điểm đăng ký vào sổ địa chính:\s*([\s\S]*?)\.", text, re.IGNORECASE)
+    so_phat_hanh_GCN = re.search(r"Số phát hành Giấy chứng nhận:\s*([\s\S]*?)\.", text, re.IGNORECASE)
+    so_vao_so_cap_GCN = re.search(r"Số vào sổ cấp Giấy chứng nhận:\s*([\s\S]*?)\.", text, re.IGNORECASE)
+    thoi_diem_dang_ky_GCN = re.search(r"Thời điểm đăng ký:\s*([\s\S]*?)\.", text, re.IGNORECASE)
+    noi_dung = re.search(r"Ghi chú:\s*([\s\S]*?)\.", text, re.IGNORECASE)
 
-    # Trích xuất thông tin người sử dụng đất
-    nguoi_su_dung_matches = re.findall(r"(?:ong|ba)\s*[:\-]?\s*([\w\s]+),\s*cccd so[:\-]?\s*(\d+)(?:,\s*dia chi[:\-]?\s*([\w\s\d\-,/.]+))?", text)
-    nguoi_su_dung = {f"TenNguoi_{i+1}": ten.strip() for i, (ten, _, _) in enumerate(nguoi_su_dung_matches)}
-    nguoi_su_dung.update({f"SoCCCD_{i+1}": cccd.strip() for i, (_, cccd, _) in enumerate(nguoi_su_dung_matches)})
-    nguoi_su_dung.update({f"DiaChiNguoi_{i+1}": dia_chi.strip() if dia_chi else "" for i, (_, _, dia_chi) in enumerate(nguoi_su_dung_matches)})
+    # Xử lý nhiều người sử dụng đất
+    nguoi_su_dung_matches = re.findall(
+        r"(?:Ông|Bà):\s*([^\n,]+?),\s*CCCD số:\s*(\d+)(?:,\s*Địa chỉ:\s*([\s\S]*?))?\.",
+        text
+    )
+    
+    nguoi_su_dung = {}
+    for i, (ten, cccd, dia_chi) in enumerate(nguoi_su_dung_matches, start=1):
+        nguoi_su_dung[f"TenNguoi_{i}"] = ten.strip()
+        nguoi_su_dung[f"SoCCCD_{i}"] = cccd.strip()
+        nguoi_su_dung[f"DiaChiNguoi_{i}"] = dia_chi.strip() if dia_chi else ""
 
-    return extracted_info, nguoi_su_dung
+    return {
+        "SoThua": thua_so.group(1).strip() if thua_so else "",
+        "SoToBanDo": to_ban_do_so.group(1).strip() if to_ban_do_so else "",
+        "DienTich": dien_tich.group(1).strip() if dien_tich else "",
+        "LoaiDat": loai_dat.group(1).strip() if loai_dat else "",
+        "HinhThucSuDung": hinh_thuc_su_dung.group(1).strip() if hinh_thuc_su_dung else "",
+        "DiaChi": dia_chi.group(1).strip() if dia_chi else "",
+        "ThoiHanSuDung": thoi_han_su_dung.group(1).strip() if thoi_han_su_dung else "",
+        "NguonGocSuDung": nguon_goc_su_dung.group(1).strip() if nguon_goc_su_dung else "",
+        "ThoiDiemDangKy": thoi_diem_dang_ky.group(1).strip() if thoi_diem_dang_ky else "",
+        "SoPhatHanhGCN": so_phat_hanh_GCN.group(1).strip() if so_phat_hanh_GCN else "",
+        "SoVaoSoCapGCN": so_vao_so_cap_GCN.group(1).strip() if so_vao_so_cap_GCN else "",
+        "ThoiDiemDangKyGCN": thoi_diem_dang_ky_GCN.group(1).strip() if thoi_diem_dang_ky_GCN else "",
+        "NoiDung": noi_dung.group(1).strip() if noi_dung else ""
+    }, nguoi_su_dung
 
-# Điền vào template DOCX
-def fill_template_with_data(template_path, land_info, nguoi_su_dung):
+# Hàm điền thông tin vào template DOCX
+def fill_template_with_data(template_path, land_info, nguoi_su_dung, new_name=None):
     doc = DocxTemplate(template_path)
     context = {**land_info, **nguoi_su_dung}
-    output_path = "output_land_info.docx"
+
+    if new_name:
+        context["TenNguoi_1"] = new_name.strip()
+
     doc.render(context)
+
+    # Tạo tên file động theo tên người sử dụng
+    ten_nguoi = context.get("TenNguoi_1", "nguoi_su_dung").replace(" ", "_")
+    output_path = f"GCN_{ten_nguoi}.docx"
     doc.save(output_path)
     return output_path
 
-# Giao diện Streamlit
+# Upload file PDF
 uploaded_file = st.file_uploader("📂 Chọn file PDF", type=["pdf"])
 
 if uploaded_file:
     text = extract_text_from_scanned_pdf(uploaded_file)
-    normalized_text = normalize_text(text)
-    land_info, nguoi_su_dung = extract_land_info(normalized_text)
+    land_info, nguoi_su_dung = extract_land_info(text)  # Trích xuất thông tin
 
     if st.button("📥 Xuất file DOCX và Tải về"):
         with st.spinner("Đang xuất file DOCX..."):
-            time.sleep(2)
+            time.sleep(2)  # Giả lập thời gian xử lý
             template_path = "template.docx"
             docx_file = fill_template_with_data(template_path, land_info, nguoi_su_dung)
 
         st.success("Xuất file thành công!")
+        
+        # Cho phép tải file DOCX
         with open(docx_file, "rb") as file:
             st.download_button(
-                label="📥 Tải file DOCX",
+                label="Tải file DOCX",
                 data=file.read(),
                 file_name=docx_file,
                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             )
 
+    # Hiển thị kết quả trích xuất
     st.subheader("🏠 Thông tin thửa đất:")
     for key, value in land_info.items():
         st.write(f"**{key}:** {value}")
 
+    # Hiển thị thông tin từng người sử dụng đất
     st.subheader("👤 Người sử dụng đất:")
     for i in range(1, len(nguoi_su_dung) // 3 + 1):
         st.write(f"**Người {i}:** {nguoi_su_dung.get(f'TenNguoi_{i}', '')}")
         st.write(f"**CCCD:** {nguoi_su_dung.get(f'SoCCCD_{i}', '')}")
         st.write(f"**Địa chỉ:** {nguoi_su_dung.get(f'DiaChiNguoi_{i}', '')}")
+
+    with st.expander("📄 Văn bản trích xuất từ PDF (OCR)"):
+        st.text_area("Nội dung:", text, height=300)
