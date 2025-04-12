@@ -67,14 +67,10 @@ def extract_field(text, field_label):
 def extract_land_info(text):
     text = clean_text(text)  # Làm sạch trước khi trích xuất
 
-    # thua_so = re.search(r"Thửa đất số:\s*(\d+)", text, re.IGNORECASE)
-    # to_ban_do_so = re.search(r"tờ bản đồ số:\s*(\d+)", text, re.IGNORECASE)
-    # dien_tich = re.search(r"Diện tích:\s*([\d.,]+)\s*m²?", text, re.IGNORECASE)
-    thua_so = extract_field(text, "Thửa đất số")
-    to_ban_do_so = extract_field(text, "tờ bản đồ số")
-    dien_tich = extract_field(text, "Diện tích")
+    thua_so = re.search(r"Thửa đất số:\s*(\d+)", text, re.IGNORECASE)
+    to_ban_do_so = re.search(r"tờ bản đồ số:\s*(\d+)", text, re.IGNORECASE)
+    dien_tich = re.search(r"Diện tích:\s*([\d.,]+)\s*m²?", text, re.IGNORECASE)
 
-    # loai_dat = re.search(r"Loại đất:\s*([\s\S]*?)\.", text, re.IGNORECASE)
     loai_dat = extract_field(text, "Loại đất")
     hinh_thuc_su_dung = extract_field(text, "Hình thức sử dụng đất")
     dia_chi = extract_field(text, "Địa chỉ")
@@ -82,16 +78,12 @@ def extract_land_info(text):
     nguon_goc_su_dung = extract_field(text, "Nguồn gốc sử dụng")
     thoi_diem_dang_ky = extract_field(text, "Thời điểm đăng ký vào sổ địa chính")
     so_vao_so_cap_GCN = extract_field(text, "Số vào sổ cấp Giấy chứng nhận")
-    # thoi_han_su_dung = re.search(r"Thời hạn:\s*([\s\S]*?)\.", text, re.IGNORECASE)
-    # nguon_goc_su_dung = re.search(r"Nguồn gốc sử dụng:\s*([\s\S]*?)\.", text, re.IGNORECASE)
-    # thoi_diem_dang_ky = re.search(r"Thời điểm đăng ký vào sổ địa chính:\s*([\s\S]*?)\.", text, re.IGNORECASE)
-    # so_vao_so_cap_GCN = re.search(r"Số vào sổ cấp Giấy chứng nhận:\s*([\s\S]*?)\.", text, re.IGNORECASE)
     noi_dung = re.search(r"Ghi chú:\s*([\s\S]*?)\.", text, re.IGNORECASE)
 
-    # Tìm "ngày ... tháng ... năm ..." gần cuối văn bản (thường là chỗ ký)
+    # Tìm "ngày ... tháng ... năm ..." gần cuối văn bản
     thoi_diem_dang_ky_GCN_raw = re.search(r"(ngày\s*\d{0,2}[\s\S]{0,60}năm\s*\d{4})", text, re.IGNORECASE)
 
-    # Tìm vùng có "Chi nhánh" để bắt số phát hành GCN (ví dụ: AA 00437154)
+    # Tìm vùng có "Chi nhánh" để bắt số phát hành GCN
     context_match = re.search(r"(CHI NHÁNH[\s\S]{0,300})", text, re.IGNORECASE)
     so_phat_hanh_GCN = None
     if context_match:
@@ -110,21 +102,20 @@ def extract_land_info(text):
         nguoi_su_dung[f"DiaChiNguoi_{i}"] = dia_chi_nguoi.strip() if dia_chi_nguoi else ""
 
     return {
-        "SoThua": thua_so.group(1).strip() if thua_so else "",
-        "SoToBanDo": to_ban_do_so.group(1).strip() if to_ban_do_so else "",
-        "DienTich": dien_tich.group(1).strip() if dien_tich else "",
-        "LoaiDat": loai_dat.group(1).strip() if loai_dat else "",
-        "HinhThucSuDung": hinh_thuc_su_dung.group(1).strip() if hinh_thuc_su_dung else "",
-        "DiaChi": dia_chi.group(1).strip() if dia_chi else "",
-        "ThoiHanSuDung": thoi_han_su_dung.group(1).strip() if thoi_han_su_dung else "",
-        "NguonGocSuDung": nguon_goc_su_dung.group(1).strip() if nguon_goc_su_dung else "",
-        "ThoiDiemDangKy": thoi_diem_dang_ky.group(1).strip() if thoi_diem_dang_ky else "",
-        "SoPhatHanhGCN": so_phat_hanh_GCN.group(1).strip() if so_phat_hanh_GCN else "",
-        "SoVaoSoCapGCN": so_vao_so_cap_GCN.group(1).strip() if so_vao_so_cap_GCN else "",
-        "ThoiDiemDangKyGCN": normalize_vietnamese_date(thoi_diem_dang_ky_GCN_raw.group(1)) if thoi_diem_dang_ky_GCN_raw else "",
-        "NoiDung": noi_dung.group(1).strip() if noi_dung else ""
+        "SoThua": **thua_so.group(1).strip() if thua_so else ""**,  # Kiểm tra None trước khi gọi .group(1)
+        "SoToBanDo": **to_ban_do_so.group(1).strip() if to_ban_do_so else ""**,  # Kiểm tra None trước khi gọi .group(1)
+        "DienTich": **dien_tich.group(1).strip() if dien_tich else ""**,  # Kiểm tra None trước khi gọi .group(1)
+        "LoaiDat": loai_dat.strip() if loai_dat else "",
+        "HinhThucSuDung": hinh_thuc_su_dung.strip() if hinh_thuc_su_dung else "",
+        "DiaChi": dia_chi.strip() if dia_chi else "",
+        "ThoiHanSuDung": thoi_han_su_dung.strip() if thoi_han_su_dung else "",
+        "NguonGocSuDung": nguon_goc_su_dung.strip() if nguon_goc_su_dung else "",
+        "ThoiDiemDangKy": thoi_diem_dang_ky.strip() if thoi_diem_dang_ky else "",
+        "SoPhatHanhGCN": **so_phat_hanh_GCN.group(1).strip() if so_phat_hanh_GCN else ""**,  # Kiểm tra None trước khi gọi .group(1)
+        "SoVaoSoCapGCN": so_vao_so_cap_GCN.strip() if so_vao_so_cap_GCN else "",
+        "ThoiDiemDangKyGCN": **normalize_vietnamese_date(thoi_diem_dang_ky_GCN_raw.group(1)) if thoi_diem_dang_ky_GCN_raw else ""**,  # Kiểm tra None trước khi gọi .group(1)
+        "NoiDung": **noi_dung.group(1).strip() if noi_dung else ""**  # Kiểm tra None trước khi gọi .group(1)
     }, nguoi_su_dung
-
 
 # Hàm điền thông tin vào template DOCX
 def fill_template_with_data(template_path, land_info, nguoi_su_dung, new_name=None):
