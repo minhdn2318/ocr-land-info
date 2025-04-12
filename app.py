@@ -13,7 +13,6 @@ POPPLER_PATH = "/usr/bin"  # Đường dẫn mặc định trên Linux
 
 st.title("📜 Trích xuất thông tin thửa đất từ PDF scanner")
 
-# Hàm chuẩn hóa văn bản, sửa lỗi OCR
 def clean_text(text):
     replacements = {
         "m°": "m²",
@@ -22,11 +21,34 @@ def clean_text(text):
         "địạ": "địa",
         "CCCD sô": "CCCD số",
         "GCN:": "Giấy chứng nhận:",
-        # Thêm các lỗi OCR phổ biến khác
+        # Các lỗi OCR phổ biến về ngày tháng
+        "<t": "1",                  # ví dụ <t3 -> 13
+        "t3": "13",                 # fallback nếu OCR bỏ mất dấu
+        "tháng .": "tháng ",
+        "năm²": "năm ",
+        "năm:": "năm ",
+        "tháng:": "tháng ",
+        "ngày:": "ngày ",
+        ".": " ",                   # loại bỏ dấu chấm gây nhiễu
+        "²": "",                    # loại bỏ ký tự mũ (thường OCR nhầm)
     }
+
     for wrong, right in replacements.items():
         text = text.replace(wrong, right)
+
+    # Dọn khoảng trắng thừa sau khi thay thế
+    text = re.sub(r"\s+", " ", text)
     return text.strip()
+
+def normalize_vietnamese_date(text):
+    text = text.lower()
+    text = re.sub(r"\s+", " ", text).strip()
+    match = re.search(r"ngày\s*(\d{1,2})\s*tháng\s*(\d{1,2})\s*năm\s*(\d{4})", text)
+    if match:
+        day, month, year = match.groups()
+        return f"{int(day):02}/{int(month):02}/{year}"
+    return ""
+
 
 # Hàm trích xuất văn bản từ PDF scan
 def extract_text_from_scanned_pdf(pdf_bytes):
@@ -37,35 +59,42 @@ def extract_text_from_scanned_pdf(pdf_bytes):
         extracted_text += text + "\n"
     return clean_text(extracted_text)  # Áp dụng sửa lỗi OCR
 
-# Hàm trích xuất thông tin thửa đất và người sử dụng đất
 def extract_land_info(text):
+    text = clean_text(text)  # Làm sạch trước khi trích xuất
+
     thua_so = re.search(r"Thửa đất số:\s*(\d+)", text, re.IGNORECASE)
     to_ban_do_so = re.search(r"tờ bản đồ số:\s*(\d+)", text, re.IGNORECASE)
     dien_tich = re.search(r"Diện tích:\s*([\d.,]+)\s*m²?", text, re.IGNORECASE)
 
-    # Dùng dấu chấm (.) để kết thúc các trường nhiều dòng
     loai_dat = re.search(r"Loại đất:\s*([\s\S]*?)\.", text, re.IGNORECASE)
     hinh_thuc_su_dung = re.search(r"Hình thức sử dụng đất:\s*([\s\S]*?)\.", text, re.IGNORECASE)
-    dia_chi = re.search(r"Địa chỉ:\s*([\s\S]*?)\.", text, re.IGNORECASE)
+    dia_chi = re.search(r"[^\n]{0,10}Địa chỉ:\s*([\s\S]*?)\.", text, re.IGNORECASE)
     thoi_han_su_dung = re.search(r"Thời hạn:\s*([\s\S]*?)\.", text, re.IGNORECASE)
     nguon_goc_su_dung = re.search(r"Nguồn gốc sử dụng:\s*([\s\S]*?)\.", text, re.IGNORECASE)
     thoi_diem_dang_ky = re.search(r"Thời điểm đăng ký vào sổ địa chính:\s*([\s\S]*?)\.", text, re.IGNORECASE)
-    so_phat_hanh_GCN = re.search(r"Số phát hành Giấy chứng nhận:\s*([\s\S]*?)\.", text, re.IGNORECASE)
     so_vao_so_cap_GCN = re.search(r"Số vào sổ cấp Giấy chứng nhận:\s*([\s\S]*?)\.", text, re.IGNORECASE)
-    thoi_diem_dang_ky_GCN = re.search(r"Thời điểm đăng ký:\s*([\s\S]*?)\.", text, re.IGNORECASE)
     noi_dung = re.search(r"Ghi chú:\s*([\s\S]*?)\.", text, re.IGNORECASE)
 
-    # Xử lý nhiều người sử dụng đất
+    # Tìm "ngày ... tháng ... năm ..." gần cuối văn bản (thường là chỗ ký)
+    thoi_diem_dang_ky_GCN_raw = re.search(r"(ngày\s*\d{0,2}[\s\S]{0,60}năm\s*\d{4})", text, re.IGNORECASE)
+
+    # Tìm vùng có "Chi nhánh" để bắt số phát hành GCN (ví dụ: AA 00437154)
+    context_match = re.search(r"(CHI NHÁNH[\s\S]{0,300})", text, re.IGNORECASE)
+    so_phat_hanh_GCN = None
+    if context_match:
+        context_block = context_match.group(1)
+        so_phat_hanh_GCN = re.search(r"\b([A-Z]{2}\s*\d{6,})\b", context_block)
+
+    # Trích xuất người sử dụng đất
     nguoi_su_dung_matches = re.findall(
         r"(?:Ông|Bà):\s*([^\n,]+?),\s*CCCD số:\s*(\d+)(?:,\s*Địa chỉ:\s*([\s\S]*?))?\.",
         text
     )
-    
     nguoi_su_dung = {}
-    for i, (ten, cccd, dia_chi) in enumerate(nguoi_su_dung_matches, start=1):
+    for i, (ten, cccd, dia_chi_nguoi) in enumerate(nguoi_su_dung_matches, start=1):
         nguoi_su_dung[f"TenNguoi_{i}"] = ten.strip()
         nguoi_su_dung[f"SoCCCD_{i}"] = cccd.strip()
-        nguoi_su_dung[f"DiaChiNguoi_{i}"] = dia_chi.strip() if dia_chi else ""
+        nguoi_su_dung[f"DiaChiNguoi_{i}"] = dia_chi_nguoi.strip() if dia_chi_nguoi else ""
 
     return {
         "SoThua": thua_so.group(1).strip() if thua_so else "",
@@ -79,9 +108,10 @@ def extract_land_info(text):
         "ThoiDiemDangKy": thoi_diem_dang_ky.group(1).strip() if thoi_diem_dang_ky else "",
         "SoPhatHanhGCN": so_phat_hanh_GCN.group(1).strip() if so_phat_hanh_GCN else "",
         "SoVaoSoCapGCN": so_vao_so_cap_GCN.group(1).strip() if so_vao_so_cap_GCN else "",
-        "ThoiDiemDangKyGCN": thoi_diem_dang_ky_GCN.group(1).strip() if thoi_diem_dang_ky_GCN else "",
+        "ThoiDiemDangKyGCN": normalize_vietnamese_date(thoi_diem_dang_ky_GCN_raw.group(1)) if thoi_diem_dang_ky_GCN_raw else "",
         "NoiDung": noi_dung.group(1).strip() if noi_dung else ""
     }, nguoi_su_dung
+
 
 # Hàm điền thông tin vào template DOCX
 def fill_template_with_data(template_path, land_info, nguoi_su_dung, new_name=None):
