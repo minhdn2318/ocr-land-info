@@ -102,19 +102,19 @@ def extract_land_info(text):
         nguoi_su_dung[f"DiaChiNguoi_{i}"] = dia_chi_nguoi.strip() if dia_chi_nguoi else ""
 
     return {
-        "SoThua": **thua_so.group(1).strip() if thua_so else ""**,  # Kiểm tra None trước khi gọi .group(1)
-        "SoToBanDo": **to_ban_do_so.group(1).strip() if to_ban_do_so else ""**,  # Kiểm tra None trước khi gọi .group(1)
-        "DienTich": **dien_tich.group(1).strip() if dien_tich else ""**,  # Kiểm tra None trước khi gọi .group(1)
+        "SoThua": thua_so.group(1).strip() if thua_so else "",  # Kiểm tra None trước khi gọi .group(1)
+        "SoToBanDo": to_ban_do_so.group(1).strip() if to_ban_do_so else "",  # Kiểm tra None trước khi gọi .group(1)
+        "DienTich": dien_tich.group(1).strip() if dien_tich else "",  # Kiểm tra None trước khi gọi .group(1)
         "LoaiDat": loai_dat.strip() if loai_dat else "",
         "HinhThucSuDung": hinh_thuc_su_dung.strip() if hinh_thuc_su_dung else "",
         "DiaChi": dia_chi.strip() if dia_chi else "",
         "ThoiHanSuDung": thoi_han_su_dung.strip() if thoi_han_su_dung else "",
         "NguonGocSuDung": nguon_goc_su_dung.strip() if nguon_goc_su_dung else "",
         "ThoiDiemDangKy": thoi_diem_dang_ky.strip() if thoi_diem_dang_ky else "",
-        "SoPhatHanhGCN": **so_phat_hanh_GCN.group(1).strip() if so_phat_hanh_GCN else ""**,  # Kiểm tra None trước khi gọi .group(1)
+        "SoPhatHanhGCN": so_phat_hanh_GCN.group(1).strip() if so_phat_hanh_GCN else "",  # Kiểm tra None trước khi gọi .group(1)
         "SoVaoSoCapGCN": so_vao_so_cap_GCN.strip() if so_vao_so_cap_GCN else "",
-        "ThoiDiemDangKyGCN": **normalize_vietnamese_date(thoi_diem_dang_ky_GCN_raw.group(1)) if thoi_diem_dang_ky_GCN_raw else ""**,  # Kiểm tra None trước khi gọi .group(1)
-        "NoiDung": **noi_dung.group(1).strip() if noi_dung else ""**  # Kiểm tra None trước khi gọi .group(1)
+        "ThoiDiemDangKyGCN": normalize_vietnamese_date(thoi_diem_dang_ky_GCN_raw.group(1)) if thoi_diem_dang_ky_GCN_raw else "",  # Kiểm tra None trước khi gọi .group(1)
+        "NoiDung": noi_dung.group(1).strip() if noi_dung else ""  # Kiểm tra None trước khi gọi .group(1)
     }, nguoi_su_dung
 
 # Hàm điền thông tin vào template DOCX
