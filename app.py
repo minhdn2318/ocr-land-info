@@ -59,20 +59,33 @@ def extract_text_from_scanned_pdf(pdf_bytes):
         extracted_text += text + "\n"
     return clean_text(extracted_text)  # Áp dụng sửa lỗi OCR
 
+def extract_field(text, field_label):
+    pattern = rf"[^\n]{{0,10}}{field_label}:\s*([\s\S]*?)(?:\.|\n|$)"
+    match = re.search(pattern, text, re.IGNORECASE)
+    return match.group(1).strip() if match else ""
+
 def extract_land_info(text):
     text = clean_text(text)  # Làm sạch trước khi trích xuất
 
-    thua_so = re.search(r"Thửa đất số:\s*(\d+)", text, re.IGNORECASE)
-    to_ban_do_so = re.search(r"tờ bản đồ số:\s*(\d+)", text, re.IGNORECASE)
-    dien_tich = re.search(r"Diện tích:\s*([\d.,]+)\s*m²?", text, re.IGNORECASE)
+    # thua_so = re.search(r"Thửa đất số:\s*(\d+)", text, re.IGNORECASE)
+    # to_ban_do_so = re.search(r"tờ bản đồ số:\s*(\d+)", text, re.IGNORECASE)
+    # dien_tich = re.search(r"Diện tích:\s*([\d.,]+)\s*m²?", text, re.IGNORECASE)
+    thua_so = extract_field(text, "Thửa đất số")
+    to_ban_do_so = extract_field(text, "tờ bản đồ số")
+    dien_tich = extract_field(text, "Diện tích")
 
-    loai_dat = re.search(r"Loại đất:\s*([\s\S]*?)\.", text, re.IGNORECASE)
-    hinh_thuc_su_dung = re.search(r"Hình thức sử dụng đất:\s*([\s\S]*?)\.", text, re.IGNORECASE)
-    dia_chi = re.search(r"[^\n]{0,10}Địa chỉ:\s*([\s\S]*?)\.", text, re.IGNORECASE)
-    thoi_han_su_dung = re.search(r"Thời hạn:\s*([\s\S]*?)\.", text, re.IGNORECASE)
-    nguon_goc_su_dung = re.search(r"Nguồn gốc sử dụng:\s*([\s\S]*?)\.", text, re.IGNORECASE)
-    thoi_diem_dang_ky = re.search(r"Thời điểm đăng ký vào sổ địa chính:\s*([\s\S]*?)\.", text, re.IGNORECASE)
-    so_vao_so_cap_GCN = re.search(r"Số vào sổ cấp Giấy chứng nhận:\s*([\s\S]*?)\.", text, re.IGNORECASE)
+    # loai_dat = re.search(r"Loại đất:\s*([\s\S]*?)\.", text, re.IGNORECASE)
+    loai_dat = extract_field(text, "Loại đất")
+    hinh_thuc_su_dung = extract_field(text, "Hình thức sử dụng đất")
+    dia_chi = extract_field(text, "Địa chỉ")
+    thoi_han_su_dung = extract_field(text, "Thời hạn")
+    nguon_goc_su_dung = extract_field(text, "Nguồn gốc sử dụng")
+    thoi_diem_dang_ky = extract_field(text, "Thời điểm đăng ký vào sổ địa chính")
+    so_vao_so_cap_GCN = extract_field(text, "Số vào sổ cấp Giấy chứng nhận")
+    # thoi_han_su_dung = re.search(r"Thời hạn:\s*([\s\S]*?)\.", text, re.IGNORECASE)
+    # nguon_goc_su_dung = re.search(r"Nguồn gốc sử dụng:\s*([\s\S]*?)\.", text, re.IGNORECASE)
+    # thoi_diem_dang_ky = re.search(r"Thời điểm đăng ký vào sổ địa chính:\s*([\s\S]*?)\.", text, re.IGNORECASE)
+    # so_vao_so_cap_GCN = re.search(r"Số vào sổ cấp Giấy chứng nhận:\s*([\s\S]*?)\.", text, re.IGNORECASE)
     noi_dung = re.search(r"Ghi chú:\s*([\s\S]*?)\.", text, re.IGNORECASE)
 
     # Tìm "ngày ... tháng ... năm ..." gần cuối văn bản (thường là chỗ ký)
