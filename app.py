@@ -62,19 +62,21 @@ def extract_text_from_scanned_pdf(pdf_bytes):
 def extract_clean_field(text, field_label, stop_labels=None):
     if stop_labels:
         stop_pattern = '|'.join([rf"{re.escape(label)}(?:[:\-])?" for label in stop_labels])
-        pattern = rf"{re.escape(field_label)}[:\-]?\s*(.*?)(?=\n\s*(?:{stop_pattern})|\n{2,}|$)"
+        pattern = rf"{re.escape(field_label)}[:\-]?\s*(.*?)(?=\n\s*(?:{stop_pattern})|\n|$)"
     else:
-        # Dừng tại dòng trắng (ngắt đoạn) hoặc hết file
-        pattern = rf"{re.escape(field_label)}[:\-]?\s*(.*?)(?=\n{2,}|$)"
+        # Dừng tại dấu chấm nếu đứng cuối câu (theo sau là xuống dòng hoặc kết thúc file)
+        pattern = rf"{re.escape(field_label)}[:\-]?\s*(.*?)(?=\.\s*\n|\n|$)"
 
     match = re.search(pattern, text, re.IGNORECASE | re.DOTALL)
     if match:
         result = match.group(1).strip()
-        result = re.sub(r'[”"\'›»]+$', '', result)
-        result = re.sub(r"\s*[\dđa]{1,2}\s*$", "", result)
+
+        # # Nếu kết thúc bằng dấu ngoặc kép lạ hoặc ký tự lỗi → xoá
+        # result = re.sub(r'[”"\'›»]+$', '', result)
+        # result = re.sub(r"\s*[\dđa]{1,2}\s*$", "", result)
+
         return result.strip()
     return ""
-
 
 
 def extract_loai_dat(text):
