@@ -60,9 +60,24 @@ def extract_text_from_scanned_pdf(pdf_bytes):
     return clean_text(extracted_text)  # Áp dụng sửa lỗi OCR
 
 def extract_clean_field(text, field_label, stop_labels):
-    pattern = rf"{field_label}[:\-]?\s*(.*?)(?=\b(?:{'|'.join(stop_labels)})[:\-]|\n|$)"
+    stop_pattern = '|'.join(re.escape(label) for label in stop_labels)
+    pattern = rf"{re.escape(field_label)}[:\-]?\s*(.*?)(?=\b(?:{stop_pattern})[:\-]|\n|$)"
     match = re.search(pattern, text, re.IGNORECASE | re.DOTALL)
-    return match.group(1).strip().rstrip(';') if match else ""
+    if match:
+        value = match.group(1).strip().rstrip(";: ")
+        # Loại bỏ các ký tự lỗi OCR cuối câu
+        value = re.sub(r"[^\w\s,.;:/\-đĐôàáạảãăắằặẳẵâấầậẩẫêếềệểễôốồộổỗơớờợởỡưứừựửữýỳỵỷỹíìịỉĩúùụủũêẽèéẽêäâóòỏọõA-Z0-9]", "", value)
+        return value.strip()
+    return ""
+
+def extract_loai_dat(text):
+    pattern = r"Loại đất[:\-]?\s*(.*?)(?=\bHình thức sử dụng|\bĐịa chỉ|\bThời hạn|\bNguồn gốc|\n|$)"
+    match = re.search(pattern, text, re.IGNORECASE | re.DOTALL)
+    if match:
+        content = match.group(1).strip()
+        return content.strip(";: \n")
+    return ""
+
 
 
 def extract_field(text, field_label):
@@ -77,10 +92,10 @@ def extract_land_info(text):
     to_ban_do_so = re.search(r"tờ bản đồ số:\s*(\d+)", text, re.IGNORECASE)
     dien_tich = re.search(r"Diện tích:\s*([\d.,]+)\s*m²?", text, re.IGNORECASE)
 
-    loai_dat = extract_field(text, "Loại đất")
+    loai_dat = extract_loai_dat(text)
     hinh_thuc_su_dung = extract_clean_field(text, "Hình thức sử dụng đất", ["Địa chỉ", "Thời hạn", "Nguồn gốc"])
     dia_chi = extract_clean_field(text, "Địa chỉ", ["Thời hạn", "Nguồn gốc", "Tên tài sản"])
-    thoi_han_su_dung = extract_clean_field(text, "Thời hạn", ["Nguồn gốc", "Số vào sổ", "Tên tài sản"])
+    thoi_han_su_dung = extract_clean_field(text, "Thời hạn", ["Nguồn gốc", "Số vào sổ", "Ghi chú", "Hình thức sử dụng", "Địa chỉ"])
     nguon_goc_su_dung = extract_field(text, "Nguồn gốc sử dụng")
     thoi_diem_dang_ky = extract_field(text, "Thời điểm đăng ký vào sổ địa chính")
     so_vao_so_cap_GCN = extract_field(text, "Số vào sổ cấp Giấy chứng nhận")
