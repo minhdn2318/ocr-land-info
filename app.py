@@ -59,8 +59,14 @@ def extract_text_from_scanned_pdf(pdf_bytes):
         extracted_text += text + "\n"
     return clean_text(extracted_text)  # Áp dụng sửa lỗi OCR
 
+def extract_clean_field(text, field_label, stop_labels):
+    pattern = rf"{field_label}[:\-]?\s*(.*?)(?=\b(?:{'|'.join(stop_labels)})[:\-]|\n|$)"
+    match = re.search(pattern, text, re.IGNORECASE | re.DOTALL)
+    return match.group(1).strip().rstrip(';') if match else ""
+
+
 def extract_field(text, field_label):
-    pattern = rf"[^\n]{{0,10}}{field_label}:\s*([\s\S]*?)(?:\.|\n|$)"
+    pattern = rf"({field_label}[:\-]?\s*[\w\s,/.]+(?:\d{1,3}(?:,\d{3})*(?:\.\d+)?\s*m²?)?)"  # Regex sửa lại cho phù hợp với Loại đất
     match = re.search(pattern, text, re.IGNORECASE)
     return match.group(1).strip() if match else ""
 
@@ -72,9 +78,9 @@ def extract_land_info(text):
     dien_tich = re.search(r"Diện tích:\s*([\d.,]+)\s*m²?", text, re.IGNORECASE)
 
     loai_dat = extract_field(text, "Loại đất")
-    hinh_thuc_su_dung = extract_field(text, "Hình thức sử dụng đất")
-    dia_chi = extract_field(text, "Địa chỉ")
-    thoi_han_su_dung = extract_field(text, "Thời hạn")
+    hinh_thuc_su_dung = extract_clean_field(text, "Hình thức sử dụng đất", ["Địa chỉ", "Thời hạn", "Nguồn gốc"])
+    dia_chi = extract_clean_field(text, "Địa chỉ", ["Thời hạn", "Nguồn gốc", "Tên tài sản"])
+    thoi_han_su_dung = extract_clean_field(text, "Thời hạn", ["Nguồn gốc", "Số vào sổ", "Tên tài sản"])
     nguon_goc_su_dung = extract_field(text, "Nguồn gốc sử dụng")
     thoi_diem_dang_ky = extract_field(text, "Thời điểm đăng ký vào sổ địa chính")
     so_vao_so_cap_GCN = extract_field(text, "Số vào sổ cấp Giấy chứng nhận")
