@@ -102,7 +102,7 @@ def extract_land_info(text):
     loai_dat = extract_loai_dat(text)
     hinh_thuc_su_dung = extract_clean_field(text, "Hình thức sử dụng đất", ["Địa chỉ", "Thời hạn"])
     dia_chi = extract_clean_field(text, "Địa chỉ", ["Thời hạn", "Nguồn gốc", "Tên tài sản"])
-    thoi_han_su_dung = extract_clean_field(text, "Thời hạn", ["Nguồn gốc", "Số vào sổ", "Ghi chú"])
+    thoi_han_su_dung = extract_loai_dat(text)
     nguon_goc_su_dung = extract_clean_field(text, "Nguồn gốc sử dụng", ["Thời điểm đăng ký", "Số vào sổ"])
     thoi_diem_dang_ky = extract_clean_field(text, "Thời điểm đăng ký vào sổ địa chính", ["Số vào sổ", "Ghi chú"])
     so_vao_so_cap_GCN = extract_clean_field(text, "Số vào sổ cấp Giấy chứng nhận", ["Ghi chú", "Chi nhánh"])
