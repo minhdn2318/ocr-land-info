@@ -60,19 +60,24 @@ def extract_text_from_scanned_pdf(pdf_bytes):
     return clean_text(extracted_text)  # Áp dụng sửa lỗi OCR
 
 def extract_clean_field(text, field_label, stop_labels=None):
-    # Nếu không truyền stop_labels thì vẫn hỗ trợ dừng bằng dấu chấm
     if stop_labels:
         stop_pattern = '|'.join([rf"{re.escape(label)}(?:[:\-])?" for label in stop_labels])
-        pattern = rf"{re.escape(field_label)}[:\-]?\s*(.*?)(?=\n\s*(?:{stop_pattern})|\.)"
+        pattern = rf"{re.escape(field_label)}[:\-]?\s*(.*?)(?=\n\s*(?:{stop_pattern})|\n|$)"
     else:
-        pattern = rf"{re.escape(field_label)}[:\-]?\s*(.*?)(?=\.)"
+        # Dừng tại dấu chấm nếu đứng cuối câu (theo sau là xuống dòng hoặc kết thúc file)
+        pattern = rf"{re.escape(field_label)}[:\-]?\s*(.*?)(?=\.\s*\n|\n|$)"
 
     match = re.search(pattern, text, re.IGNORECASE | re.DOTALL)
     if match:
         result = match.group(1).strip()
-        result = re.sub(r"\s*[\dđa]{1,2}\s*$", "", result)  # Xoá kí tự lỗi OCR cuối
+
+        # Nếu kết thúc bằng dấu ngoặc kép lạ hoặc ký tự lỗi → xoá
+        result = re.sub(r'[”"\'›»]+$', '', result)
+        result = re.sub(r"\s*[\dđa]{1,2}\s*$", "", result)
+
         return result.strip()
     return ""
+
 
 def extract_loai_dat(text):
     pattern = r"Loại đất[:\-]?\s*(.*?)(?=\.)"
