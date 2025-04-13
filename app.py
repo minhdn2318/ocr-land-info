@@ -60,15 +60,21 @@ def extract_text_from_scanned_pdf(pdf_bytes):
     return clean_text(extracted_text)  # Áp dụng sửa lỗi OCR
 
 def extract_clean_field(text, field_label, stop_labels):
-    stop_pattern = '|'.join(re.escape(label) for label in stop_labels)
-    pattern = rf"{re.escape(field_label)}[:\-]?\s*(.*?)(?=\b(?:{stop_pattern})[:\-]|\n|$)"
+    # Xây dựng regex lookahead với nhãn có dấu ":" hoặc "-"
+    stop_pattern = '|'.join([rf"{re.escape(label)}[:\-]" for label in stop_labels])
+    pattern = rf"{re.escape(field_label)}[:\-]?\s*(.*?)(?=\s*(?:{stop_pattern})|\n|$)"
+    
     match = re.search(pattern, text, re.IGNORECASE | re.DOTALL)
     if match:
-        value = match.group(1).strip().rstrip(";: ")
-        # Loại bỏ các ký tự lỗi OCR cuối câu
-        value = re.sub(r"[^\w\s,.;:/\-đĐôàáạảãăắằặẳẵâấầậẩẫêếềệểễôốồộổỗơớờợởỡưứừựửữýỳỵỷỹíìịỉĩúùụủũêẽèéẽêäâóòỏọõA-Z0-9]", "", value)
-        return value.strip()
+        result = match.group(1).strip()
+        
+        # Xử lý OCR noise như 'đ' dư ở cuối
+        result = re.sub(r"[\s\-–•,]*[đ]?\s*(?:Địa chỉ|Hình thức sử dụng|Thời hạn|Ghi chú).*", "", result, flags=re.IGNORECASE)
+        result = re.sub(r"[^\w\s,.;:/\-đĐôàáạảãăắằặẳẵâấầậẩẫêếềệểễôốồộổỗơớờợởỡưứừựửữýỳỵỷỹíìịỉĩúùụủũêẽèéẽêäâóòỏọõA-Z0-9]", "", result)
+        
+        return result.strip()
     return ""
+
 
 def extract_loai_dat(text):
     pattern = r"Loại đất[:\-]?\s*(.*?)(?=\bHình thức sử dụng|\bĐịa chỉ|\bThời hạn|\bNguồn gốc|\n|$)"
