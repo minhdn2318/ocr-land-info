@@ -36,9 +36,10 @@ def clean_text(text):
     for wrong, right in replacements.items():
         text = text.replace(wrong, right)
 
-    # Dọn khoảng trắng thừa sau khi thay thế
-    text = re.sub(r"\s+", " ", text)
-    return text.strip()
+    # Thay vì xoá tất cả \n, ta chuẩn hoá từng dòng
+    lines = text.split("\n")
+    cleaned_lines = [re.sub(r"\s+", " ", line).strip() for line in lines if line.strip()]
+    return "\n".join(cleaned_lines).strip()
 
 def normalize_vietnamese_date(text):
     text = text.lower()
@@ -60,20 +61,20 @@ def extract_text_from_scanned_pdf(pdf_bytes):
     return clean_text(extracted_text)  # Áp dụng sửa lỗi OCR
 
 def extract_clean_field(text, field_label, stop_labels):
-    # Xây dựng regex lookahead với nhãn có dấu ":" hoặc "-"
-    stop_pattern = '|'.join([rf"{re.escape(label)}[:\-]" for label in stop_labels])
-    pattern = rf"{re.escape(field_label)}[:\-]?\s*(.*?)(?=\s*(?:{stop_pattern})|\n|$)"
-    
+    # Lookahead các nhãn tiếp theo có hoặc không có dấu
+    stop_pattern = '|'.join([rf"{re.escape(label)}(?:[:\-])?" for label in stop_labels])
+    pattern = rf"{re.escape(field_label)}[:\-]?\s*(.*?)(?=\n\s*(?:{stop_pattern})|\Z)"
+
     match = re.search(pattern, text, re.IGNORECASE | re.DOTALL)
     if match:
         result = match.group(1).strip()
-        
-        # Xử lý OCR noise như 'đ' dư ở cuối
-        result = re.sub(r"[\s\-–•,]*[đ]?\s*(?:Địa chỉ|Hình thức sử dụng|Thời hạn|Ghi chú).*", "", result, flags=re.IGNORECASE)
-        result = re.sub(r"[^\w\s,.;:/\-đĐôàáạảãăắằặẳẵâấầậẩẫêếềệểễôốồộổỗơớờợởỡưứừựửữýỳỵỷỹíìịỉĩúùụủũêẽèéẽêäâóòỏọõA-Z0-9]", "", result)
-        
+
+        # Cắt bỏ từ dính cuối dòng như "đ", "3", "a" OCR nhầm
+        result = re.sub(r"\s*[\dđa]{1,2}\s*$", "", result)
+
         return result.strip()
     return ""
+
 
 
 def extract_loai_dat(text):
@@ -86,10 +87,10 @@ def extract_loai_dat(text):
 
 
 
-def extract_field(text, field_label):
-    pattern = rf"({field_label}[:\-]?\s*[\w\s,/.]+(?:\d{1,3}(?:,\d{3})*(?:\.\d+)?\s*m²?)?)"  # Regex sửa lại cho phù hợp với Loại đất
-    match = re.search(pattern, text, re.IGNORECASE)
-    return match.group(1).strip() if match else ""
+# def extract_field(text, field_label):
+#     pattern = rf"({field_label}[:\-]?\s*[\w\s,/.]+(?:\d{1,3}(?:,\d{3})*(?:\.\d+)?\s*m²?)?)"  # Regex sửa lại cho phù hợp với Loại đất
+#     match = re.search(pattern, text, re.IGNORECASE)
+#     return match.group(1).strip() if match else ""
 
 def extract_land_info(text):
     text = clean_text(text)  # Làm sạch trước khi trích xuất
@@ -102,9 +103,9 @@ def extract_land_info(text):
     hinh_thuc_su_dung = extract_clean_field(text, "Hình thức sử dụng đất", ["Địa chỉ", "Thời hạn", "Nguồn gốc"])
     dia_chi = extract_clean_field(text, "Địa chỉ", ["Thời hạn", "Nguồn gốc", "Tên tài sản"])
     thoi_han_su_dung = extract_clean_field(text, "Thời hạn", ["Nguồn gốc", "Số vào sổ", "Ghi chú", "Hình thức sử dụng", "Địa chỉ"])
-    nguon_goc_su_dung = extract_field(text, "Nguồn gốc sử dụng")
-    thoi_diem_dang_ky = extract_field(text, "Thời điểm đăng ký vào sổ địa chính")
-    so_vao_so_cap_GCN = extract_field(text, "Số vào sổ cấp Giấy chứng nhận")
+    nguon_goc_su_dung = extract_clean_field(text, "Nguồn gốc sử dụng")
+    thoi_diem_dang_ky = extract_clean_field(text, "Thời điểm đăng ký vào sổ địa chính")
+    so_vao_so_cap_GCN = extract_clean_field(text, "Số vào sổ cấp Giấy chứng nhận")
     noi_dung = re.search(r"Ghi chú:\s*([\s\S]*?)\.", text, re.IGNORECASE)
 
     # Tìm "ngày ... tháng ... năm ..." gần cuối văn bản
