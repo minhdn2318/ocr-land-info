@@ -7,3 +7,6 @@ pymupdf==1.23.7
 streamlit
 docxtpl
 opencv-python-headless
+pandas
+openpyxl
+xlsxwriter
